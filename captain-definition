@@ -1,4 +1,14 @@
 {
   "schemaVersion": 2,
-  "dockerfilePath": "./Dockerfile"
+  "dockerfileLines": [
+    "FROM frappe/bench:latest",
+    "USER root",
+    "RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*",
+    "USER frappe",
+    "WORKDIR /usr/src/app",
+    "COPY . /usr/src/app/",
+    "RUN chmod +x /usr/src/app/docker/init.sh",
+    "EXPOSE 8000",
+    "CMD [\"/usr/src/app/docker/init.sh\"]"
+  ]
 }

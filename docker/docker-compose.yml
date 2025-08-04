@@ -17,15 +17,25 @@ services:
 
   frappe:
     image: frappe/bench:latest
-    command: bash /workspace/init.sh
+    command: bash /workspace/docker/init.sh
     environment:
       - SHELL=/bin/bash
+      - DB_HOST=mariadb
+      - DB_ROOT_PASSWORD=123
+      - REDIS_CACHE_HOST=redis
+      - REDIS_QUEUE_HOST=redis
+      - REDIS_SOCKETIO_HOST=redis
+      - SITE_NAME=hrms.localhost
+      - ADMIN_PASSWORD=admin
     working_dir: /home/frappe
     volumes:
       - .:/workspace
     ports:
       - 8000:8000
       - 9000:9000
+    depends_on:
+      - mariadb
+      - redis
 
 volumes:
   mariadb-data:

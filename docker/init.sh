@@ -1,8 +1,8 @@
 #!/bin/bash
 
 # Load environment variables if .env file exists
-if [ -f "/home/frappe/.env" ]; then
-    export $(cat /home/frappe/.env | grep -v '^#' | xargs)
+if [ -f "/usr/src/app/.env" ]; then
+    export $(cat /usr/src/app/.env | grep -v '^#' | xargs)
 fi
 
 # Set default values if not provided
@@ -86,8 +86,8 @@ if [ ! -d "apps/erpnext" ]; then
 fi
 
 if [ ! -d "apps/hrms" ]; then
-    echo "Installing HRMS from local copy..."
-    bench get-app /home/frappe/hrms-app
+    echo "Installing HRMS from application directory..."
+    bench get-app /usr/src/app
 fi
 
 # Create site only if it doesn't exist
