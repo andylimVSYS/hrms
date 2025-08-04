@@ -1,4 +1,4 @@
-#!bin/bash
+#!/bin/bash
 
 if [ -d "/home/frappe/frappe-bench/apps/frappe" ]; then
     echo "Bench already exists, skipping init"
@@ -25,7 +25,9 @@ sed -i '/redis/d' ./Procfile
 sed -i '/watch/d' ./Procfile
 
 bench get-app erpnext
-bench get-app hrms
+
+# Get HRMS app from local copy
+bench get-app /home/frappe/hrms-app
 
 bench new-site hrms.localhost \
 --force \
