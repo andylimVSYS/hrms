@@ -86,14 +86,15 @@ if [ -f "./Procfile" ]; then
 fi
 
 # Install apps only if they don't exist
-if [ ! -d "apps/erpnext" ]; then
-    echo "Installing ERPNext..."
-    bench get-app erpnext
-    # Ensure erpnext is in apps.txt
-    if ! grep -q "erpnext" apps/apps.txt; then
-        echo "erpnext" >> apps/apps.txt
-    fi
-fi
+# Skip ERPNext - only install HRMS
+# if [ ! -d "apps/erpnext" ]; then
+#     echo "Installing ERPNext..."
+#     bench get-app erpnext
+#     # Ensure erpnext is in apps.txt
+#     if ! grep -q "erpnext" apps/apps.txt; then
+#         echo "erpnext" >> apps/apps.txt
+#     fi
+# fi
 
 if [ ! -d "apps/hrms" ]; then
     echo "Installing HRMS from application directory..."
@@ -165,18 +166,14 @@ if [ ! -d "sites/${SITE_NAME}" ]; then
 
     echo "Installing apps on site..."
     
-    # First install ERPNext (required dependency for HRMS)
-    echo "Installing ERPNext on site..."
-    bench --site ${SITE_NAME} install-app erpnext
-    
-    # Then try to install HRMS
+    # Install HRMS directly (skip ERPNext dependency)
     echo "Installing HRMS app on site..."
     if [ -d "apps/hrms" ] && [ -f "apps/hrms/hrms/__init__.py" ] && grep -q "hrms" apps/apps.txt; then
         echo "HRMS app found, attempting installation..."
         if bench --site ${SITE_NAME} install-app hrms; then
             echo "✅ HRMS successfully installed!"
         else
-            echo "⚠️  HRMS installation failed, but ERPNext is still available"
+            echo "⚠️  HRMS installation failed"
             echo "You can try installing HRMS manually later with:"
             echo "  bench --site ${SITE_NAME} install-app hrms"
         fi
@@ -184,7 +181,7 @@ if [ ! -d "sites/${SITE_NAME}" ]; then
         echo "⚠️  HRMS app not properly configured"
         echo "Available apps in apps.txt:"
         cat apps/apps.txt 2>/dev/null || echo "apps.txt not found"
-        echo "Site will work with Frappe + ERPNext"
+        echo "Site will work with Frappe only"
     fi
     
     # Configure site settings
@@ -215,10 +212,10 @@ echo "  Admin Password: ${ADMIN_PASSWORD}"
 echo "  Access URL: http://localhost:8000"
 echo ""
 if bench --site ${SITE_NAME} list-apps | grep -q "hrms"; then
-    echo "✅ SUCCESS: Full HRMS deployment completed!"
-    echo "   You now have Frappe + ERPNext + HRMS"
+    echo "✅ SUCCESS: HRMS deployment completed!"
+    echo "   You now have Frappe + HRMS (HR Management System)"
 else
-    echo "⚠️  PARTIAL: Frappe + ERPNext deployed successfully"
+    echo "⚠️  PARTIAL: Frappe deployed successfully"
     echo "   HRMS installation may have issues but can be fixed manually"
 fi
 echo "=========================="
