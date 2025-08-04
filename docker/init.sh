@@ -66,6 +66,12 @@ cd frappe-bench
 # Wait a moment for bench to be fully initialized
 sleep 2
 
+# Ensure apps.txt exists and has correct format
+echo "Ensuring apps.txt exists..."
+if [ ! -f "apps/apps.txt" ]; then
+    echo "frappe" > apps/apps.txt
+fi
+
 # Configure external services (only after bench is properly initialized)
 echo "Configuring external database and Redis services..."
 bench set-mariadb-host ${DB_HOST}
@@ -83,6 +89,10 @@ fi
 if [ ! -d "apps/erpnext" ]; then
     echo "Installing ERPNext..."
     bench get-app erpnext
+    # Ensure erpnext is in apps.txt
+    if ! grep -q "erpnext" apps/apps.txt; then
+        echo "erpnext" >> apps/apps.txt
+    fi
 fi
 
 if [ ! -d "apps/hrms" ]; then
@@ -95,13 +105,21 @@ if [ ! -d "apps/hrms" ]; then
     # Remove git directory to avoid issues
     rm -rf apps/hrms/.git
     
+    # Add HRMS to apps.txt
+    echo "Adding HRMS to apps.txt..."
+    echo "hrms" >> apps/apps.txt
+    
     # Install the Python package
     echo "Installing HRMS Python package..."
     /home/frappe/frappe-bench/env/bin/python -m pip install --quiet --upgrade -e /home/frappe/frappe-bench/apps/hrms
     
-    # Build the app assets
+    # Install missing Node.js dependencies for HRMS
+    echo "Installing HRMS Node.js dependencies..."
+    cd apps/hrms && npm install html2canvas --save && cd ../..
+    
+    # Build the app assets (skip if build fails, continue with site creation)
     echo "Building HRMS assets..."
-    bench build --app hrms
+    bench build --app hrms || echo "HRMS build failed, continuing with site creation..."
 fi
 
 # Create site only if it doesn't exist
@@ -116,15 +134,18 @@ if [ ! -d "sites/${SITE_NAME}" ]; then
     echo "Installing HRMS app on site..."
     # Check if HRMS app is properly installed before trying to install it on site
     if [ -d "apps/hrms" ] && [ -f "apps/hrms/hrms/__init__.py" ]; then
-        bench --site ${SITE_NAME} install-app hrms
+        # Try to install HRMS app, but continue even if it fails
+        bench --site ${SITE_NAME} install-app hrms || echo "HRMS app installation failed, but site is usable with frappe and erpnext"
         bench --site ${SITE_NAME} set-config developer_mode ${DEVELOPER_MODE}
         bench --site ${SITE_NAME} enable-scheduler
         bench --site ${SITE_NAME} clear-cache
         bench use ${SITE_NAME}
     else
-        echo "ERROR: HRMS app not properly installed, skipping site installation"
+        echo "HRMS app not properly installed, skipping site installation"
         echo "Available apps:"
         ls -la apps/
+        echo "Site is still usable with frappe and erpnext"
+        bench use ${SITE_NAME}
     fi
 else
     echo "Site ${SITE_NAME} already exists, using existing site..."
@@ -133,8 +154,15 @@ fi
 
 echo "Starting bench..."
 echo "=== Final Status Check ==="
+echo "Apps.txt contents:"
+cat apps/apps.txt || echo "apps.txt not found"
+echo ""
 echo "Installed apps:"
 bench --site ${SITE_NAME} list-apps || echo "Could not list apps"
+echo ""
+echo "Available apps in directory:"
+ls -la apps/ | grep -E '^d' || echo "No app directories found"
+echo ""
 echo "Site: ${SITE_NAME}"
 echo "Available at: http://localhost:8000"
 echo "=========================="
