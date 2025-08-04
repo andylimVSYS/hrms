@@ -10,6 +10,7 @@ RUN apt-get update && apt-get install -y \
     wget \
     curl \
     git \
+    netcat-openbsd \
     && rm -rf /var/lib/apt/lists/*
 
 # Switch back to frappe user
@@ -27,6 +28,9 @@ COPY --chown=frappe:frappe .env* /home/frappe/
 # Copy and setup the initialization script
 COPY --chown=frappe:frappe docker/init.sh /home/frappe/init.sh
 RUN chmod +x /home/frappe/init.sh
+
+# Create volume mount point for persistence
+RUN mkdir -p /home/frappe/frappe-bench
 
 # Expose port
 EXPOSE 8000
