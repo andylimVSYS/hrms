@@ -99,11 +99,22 @@ echo "📋 Current apps.txt content after ERPNext removal:"
 cat apps/apps.txt || echo "apps.txt file missing"
 
 if [ ! -d "apps/hrms" ]; then
-    echo "Installing HRMS from application directory..."
+    echo "Installing HRMS from GitHub repository..."
     
-    # Copy the HRMS app directly to avoid git ownership issues
-    echo "Copying HRMS app files..."
-    cp -r /usr/src/app apps/hrms
+    # Copy HRMS from the cloned source
+    if [ -d "/tmp/hrms-app" ]; then
+        echo "Copying HRMS app from repository..."
+        cp -r /tmp/hrms-app apps/hrms
+    else
+        echo "HRMS source not found, cloning directly..."
+        git clone https://github.com/andylimVSYS/hrms.git apps/hrms
+        # Keep only the hrms module from the repository
+        if [ -d "apps/hrms/hrms" ]; then
+            mv apps/hrms/hrms apps/hrms_temp
+            rm -rf apps/hrms
+            mv apps/hrms_temp apps/hrms
+        fi
+    fi
     
     # Remove git directory to avoid issues
     rm -rf apps/hrms/.git
