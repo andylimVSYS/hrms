@@ -3,13 +3,11 @@
   "dockerfileLines": [
     "FROM frappe/bench:latest",
     "USER root",
-    "RUN apt-get update && apt-get install -y netcat-openbsd git && rm -rf /var/lib/apt/lists/*",
+    "RUN apt-get update && apt-get install -y netcat-openbsd && rm -rf /var/lib/apt/lists/*",
     "USER frappe",
-    "WORKDIR /home/frappe",
-    "RUN git clone https://github.com/andylimVSYS/hrms.git /tmp/hrms-source",
-    "RUN cp /tmp/hrms-source/docker/init.sh /tmp/init.sh && chmod +x /tmp/init.sh",
-    "RUN cp -r /tmp/hrms-source/hrms /tmp/hrms-app",
+    "WORKDIR /usr/src/app",
+    "COPY . /usr/src/app/",
     "EXPOSE 8000",
-    "CMD [\"bash\", \"/tmp/init.sh\"]"
+    "CMD [\"bash\", \"/usr/src/app/docker/init.sh\"]"
   ]
 }
