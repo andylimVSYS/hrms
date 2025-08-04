@@ -22,15 +22,15 @@ WORKDIR /home/frappe
 # Copy the HRMS application first
 COPY --chown=frappe:frappe . /home/frappe/hrms-app/
 
-# Copy environment configuration
-COPY --chown=frappe:frappe .env* /home/frappe/
-
 # Copy and setup the initialization script
 COPY --chown=frappe:frappe docker/init.sh /home/frappe/init.sh
 RUN chmod +x /home/frappe/init.sh
 
 # Create volume mount point for persistence
 RUN mkdir -p /home/frappe/frappe-bench
+
+# Add a health check script
+RUN echo '#!/bin/bash\nif [ -f "/home/frappe/frappe-bench/sites/currentsite.txt" ]; then\n  site=$(cat /home/frappe/frappe-bench/sites/currentsite.txt)\n  curl -f "http://localhost:8000" > /dev/null 2>&1\nelse\n  exit 1\nfi' > /home/frappe/healthcheck.sh && chmod +x /home/frappe/healthcheck.sh
 
 # Expose port
 EXPOSE 8000

@@ -41,8 +41,6 @@ if [ -d "/home/frappe/frappe-bench/apps/frappe" ] && [ -d "/home/frappe/frappe-b
     exit 0
 fi
 
-echo "Creating new bench..."
-
 # Ensure we're in the right directory
 cd /home/frappe
 
@@ -51,22 +49,35 @@ if [ -n "${NVM_DIR}" ] && [ -n "${NODE_VERSION_DEVELOP}" ]; then
     export PATH="${NVM_DIR}/versions/node/v${NODE_VERSION_DEVELOP}/bin/:${PATH}"
 fi
 
-# Initialize bench if it doesn't exist
-if [ ! -d "/home/frappe/frappe-bench" ]; then
-    bench init --skip-redis-config-generation frappe-bench
+# Remove any existing incomplete bench directory
+if [ -d "/home/frappe/frappe-bench" ]; then
+    echo "Removing incomplete bench directory..."
+    rm -rf /home/frappe/frappe-bench
 fi
 
+echo "Creating new bench..."
+
+# Initialize bench
+bench init --skip-redis-config-generation frappe-bench
+
+# Change to bench directory
 cd frappe-bench
 
-# Configure external services
+# Wait a moment for bench to be fully initialized
+sleep 2
+
+# Configure external services (only after bench is properly initialized)
+echo "Configuring external database and Redis services..."
 bench set-mariadb-host ${DB_HOST}
 bench set-redis-cache-host redis://${REDIS_CACHE_HOST}:${REDIS_CACHE_PORT}
 bench set-redis-queue-host redis://${REDIS_QUEUE_HOST}:${REDIS_QUEUE_PORT}
 bench set-redis-socketio-host redis://${REDIS_SOCKETIO_HOST}:${REDIS_SOCKETIO_PORT}
 
 # Remove redis, watch from Procfile since we use external services
-sed -i '/redis/d' ./Procfile
-sed -i '/watch/d' ./Procfile
+if [ -f "./Procfile" ]; then
+    sed -i '/redis/d' ./Procfile
+    sed -i '/watch/d' ./Procfile
+fi
 
 # Install apps only if they don't exist
 if [ ! -d "apps/erpnext" ]; then
@@ -93,6 +104,9 @@ if [ ! -d "sites/${SITE_NAME}" ]; then
     bench --site ${SITE_NAME} set-config developer_mode ${DEVELOPER_MODE}
     bench --site ${SITE_NAME} enable-scheduler
     bench --site ${SITE_NAME} clear-cache
+    bench use ${SITE_NAME}
+else
+    echo "Site ${SITE_NAME} already exists, using existing site..."
     bench use ${SITE_NAME}
 fi
 
