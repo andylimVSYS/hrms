@@ -87,7 +87,21 @@ fi
 
 if [ ! -d "apps/hrms" ]; then
     echo "Installing HRMS from application directory..."
-    bench get-app /usr/src/app
+    
+    # Copy the HRMS app directly to avoid git ownership issues
+    echo "Copying HRMS app files..."
+    cp -r /usr/src/app apps/hrms
+    
+    # Remove git directory to avoid issues
+    rm -rf apps/hrms/.git
+    
+    # Install the Python package
+    echo "Installing HRMS Python package..."
+    /home/frappe/frappe-bench/env/bin/python -m pip install --quiet --upgrade -e /home/frappe/frappe-bench/apps/hrms
+    
+    # Build the app assets
+    echo "Building HRMS assets..."
+    bench build --app hrms
 fi
 
 # Create site only if it doesn't exist
@@ -100,15 +114,28 @@ if [ ! -d "sites/${SITE_NAME}" ]; then
     --no-mariadb-socket
 
     echo "Installing HRMS app on site..."
-    bench --site ${SITE_NAME} install-app hrms
-    bench --site ${SITE_NAME} set-config developer_mode ${DEVELOPER_MODE}
-    bench --site ${SITE_NAME} enable-scheduler
-    bench --site ${SITE_NAME} clear-cache
-    bench use ${SITE_NAME}
+    # Check if HRMS app is properly installed before trying to install it on site
+    if [ -d "apps/hrms" ] && [ -f "apps/hrms/hrms/__init__.py" ]; then
+        bench --site ${SITE_NAME} install-app hrms
+        bench --site ${SITE_NAME} set-config developer_mode ${DEVELOPER_MODE}
+        bench --site ${SITE_NAME} enable-scheduler
+        bench --site ${SITE_NAME} clear-cache
+        bench use ${SITE_NAME}
+    else
+        echo "ERROR: HRMS app not properly installed, skipping site installation"
+        echo "Available apps:"
+        ls -la apps/
+    fi
 else
     echo "Site ${SITE_NAME} already exists, using existing site..."
     bench use ${SITE_NAME}
 fi
 
 echo "Starting bench..."
+echo "=== Final Status Check ==="
+echo "Installed apps:"
+bench --site ${SITE_NAME} list-apps || echo "Could not list apps"
+echo "Site: ${SITE_NAME}"
+echo "Available at: http://localhost:8000"
+echo "=========================="
 bench start
