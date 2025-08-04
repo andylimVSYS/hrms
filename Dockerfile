@@ -21,6 +21,9 @@ WORKDIR /home/frappe
 # Copy the HRMS application first
 COPY --chown=frappe:frappe . /home/frappe/hrms-app/
 
+# Copy environment configuration
+COPY --chown=frappe:frappe .env* /home/frappe/
+
 # Copy and setup the initialization script
 COPY --chown=frappe:frappe docker/init.sh /home/frappe/init.sh
 RUN chmod +x /home/frappe/init.sh

@@ -56,12 +56,10 @@ pids/
 # Coverage directory used by tools like istanbul
 coverage/
 
-# Environment variables
-.env
+# Environment variables (exclude specific ones, allow .env.example and .env.production)
 .env.local
 .env.development.local
 .env.test.local
-.env.production.local
 
 # Documentation
 docs/
