@@ -80,10 +80,11 @@ if [ -f "./Procfile" ]; then
 fi
 
 # Install apps only if they don't exist
-if [ ! -d "apps/erpnext" ]; then
-    echo "Installing ERPNext..."
-    bench get-app erpnext
-fi
+# Skip ERPNext installation - HRMS only
+# if [ ! -d "apps/erpnext" ]; then
+#     echo "Installing ERPNext..."
+#     bench get-app erpnext
+# fi
 
 if [ ! -d "apps/hrms" ]; then
     echo "Installing HRMS using bench..."
