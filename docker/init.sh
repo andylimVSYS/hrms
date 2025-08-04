@@ -85,16 +85,18 @@ if [ -f "./Procfile" ]; then
     sed -i '/watch/d' ./Procfile
 fi
 
-# Install apps only if they don't exist
-# Skip ERPNext - only install HRMS
-# if [ ! -d "apps/erpnext" ]; then
-#     echo "Installing ERPNext..."
-#     bench get-app erpnext
-#     # Ensure erpnext is in apps.txt
-#     if ! grep -q "erpnext" apps/apps.txt; then
-#         echo "erpnext" >> apps/apps.txt
-#     fi
-# fi
+# Remove ERPNext from apps.txt and directory if it exists (HRMS-only deployment)
+echo "Removing ERPNext for HRMS-only deployment..."
+if [ -d "apps/erpnext" ]; then
+    echo "Removing ERPNext app directory..."
+    rm -rf apps/erpnext
+fi
+
+# Clean apps.txt to remove any erpnext entries and ensure it only has frappe
+echo "frappe" > apps/apps.txt
+
+echo "📋 Current apps.txt content after ERPNext removal:"
+cat apps/apps.txt || echo "apps.txt file missing"
 
 if [ ! -d "apps/hrms" ]; then
     echo "Installing HRMS from application directory..."
@@ -165,6 +167,15 @@ if [ ! -d "sites/${SITE_NAME}" ]; then
     --no-mariadb-socket
 
     echo "Installing apps on site..."
+    
+    # Remove ERPNext from site if it exists (for HRMS-only deployment)
+    echo "Checking for ERPNext on site and removing if present..."
+    if bench --site ${SITE_NAME} list-apps | grep -q "erpnext"; then
+        echo "ERPNext found on site, removing..."
+        bench --site ${SITE_NAME} uninstall-app erpnext --yes --force || echo "ERPNext removal failed, continuing..."
+    else
+        echo "ERPNext not found on site (good for HRMS-only deployment)"
+    fi
     
     # Install HRMS directly (skip ERPNext dependency)
     echo "Installing HRMS app on site..."
