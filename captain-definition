@@ -7,8 +7,7 @@
     "USER frappe",
     "WORKDIR /usr/src/app",
     "COPY . /usr/src/app/",
-    "RUN chmod +x /usr/src/app/docker/init.sh",
     "EXPOSE 8000",
-    "CMD [\"/usr/src/app/docker/init.sh\"]"
+    "CMD [\"bash\", \"/usr/src/app/docker/init.sh\"]"
   ]
 }
